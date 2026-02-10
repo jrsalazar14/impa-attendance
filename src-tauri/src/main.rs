@@ -72,7 +72,6 @@ fn init_database(conn: &Connection) {
         CREATE INDEX IF NOT EXISTS idx_employee_id ON attendance(employee_id);
         CREATE INDEX IF NOT EXISTS idx_timestamp ON attendance(timestamp);
         CREATE INDEX IF NOT EXISTS idx_type ON attendance(type);
-        CREATE INDEX IF NOT EXISTS idx_date ON attendance(date(timestamp, 'localtime'));
         CREATE INDEX IF NOT EXISTS idx_employee_active ON employees(active);",
     )
     .expect("Failed to initialize database");
@@ -601,6 +600,9 @@ fn dirs_desktop() -> Option<std::path::PathBuf> {
 fn main() {
     let conn = Connection::open("attendance.db").unwrap();
     init_database(&conn);
+    
+    // Explicitly drop the problematic index if it exists, as it causes errors on some platforms
+    let _ = conn.execute("DROP INDEX IF EXISTS idx_date", []);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())

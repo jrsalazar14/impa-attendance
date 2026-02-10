@@ -173,7 +173,6 @@ CREATE TABLE attendance (
 CREATE INDEX idx_employee_id ON attendance(employee_id);
 CREATE INDEX idx_timestamp ON attendance(timestamp);
 CREATE INDEX idx_type ON attendance(type);
-CREATE INDEX idx_date ON attendance(DATE(timestamp));
 
 -- Tabla de configuración (futura expansión)
 CREATE TABLE config (
