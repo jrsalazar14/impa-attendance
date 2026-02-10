@@ -46,19 +46,19 @@ fn init_database(conn: &Connection) {
             id INTEGER PRIMARY KEY,
             employee_id TEXT NOT NULL,
             employee_name TEXT,
-            timestamp DATETIME DEFAULT (datetime('now', 'localtime')),
+            timestamp DATETIME DEFAULT (datetime('now')),
             type TEXT CHECK(type IN ('entry', 'exit')),
             notes TEXT,
-            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-            updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
+            created_at DATETIME DEFAULT (datetime('now')),
+            updated_at DATETIME DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS employees (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             active BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-            updated_at DATETIME DEFAULT (datetime('now', 'localtime'))
+            created_at DATETIME DEFAULT (datetime('now')),
+            updated_at DATETIME DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS config (
@@ -76,11 +76,14 @@ fn init_database(conn: &Connection) {
     )
     .expect("Failed to initialize database");
 
+    // Explicitly drop the problematic index if it exists, as it causes errors on some platforms
+    let _ = conn.execute("DROP INDEX IF EXISTS idx_date", []);
+
     // Migrate: add columns that may be missing from older databases
     for col in &[
         ("notes", "TEXT"),
-        ("created_at", "DATETIME DEFAULT (datetime('now', 'localtime'))"),
-        ("updated_at", "DATETIME DEFAULT (datetime('now', 'localtime'))"),
+        ("created_at", "DATETIME DEFAULT (datetime('now'))"),
+        ("updated_at", "DATETIME DEFAULT (datetime('now'))"),
     ] {
         let sql = format!("ALTER TABLE attendance ADD COLUMN {} {}", col.0, col.1);
         // Ignore error — means column already exists
@@ -601,9 +604,6 @@ fn main() {
     let conn = Connection::open("attendance.db").unwrap();
     init_database(&conn);
     
-    // Explicitly drop the problematic index if it exists, as it causes errors on some platforms
-    let _ = conn.execute("DROP INDEX IF EXISTS idx_date", []);
-
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(AppState {
